@@ -1,0 +1,7 @@
+{
+  "name": "repo-cleanup",
+  "description": "Audit and clean up a repository: find typos, inconsistencies, outdated references, dead code, failing tests, type errors, linter issues, and documentation gaps",
+  "author": {
+    "name": "Hans Harhoff Andersen"
+  }
+}

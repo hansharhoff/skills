@@ -1,4 +1,19 @@
 {
   "name": "hansharhoff-skills",
-  "description": "Personal Claude Code skills marketplace by Hans Harhoff Andersen"
+  "description": "Personal Claude Code skills marketplace by Hans Harhoff Andersen",
+  "owner": {
+    "name": "Hans Harhoff Andersen"
+  },
+  "plugins": [
+    {
+      "name": "teach-tech",
+      "source": "./plugins/teach-tech",
+      "description": "Interactive technology teaching sessions — guides you through new technologies with explanations, diagrams, and hands-on exercises"
+    },
+    {
+      "name": "repo-cleanup",
+      "source": "./plugins/repo-cleanup",
+      "description": "Audit and clean up a repository: find typos, inconsistencies, outdated references, dead code, failing tests, type errors, linter issues, and documentation gaps"
+    }
+  ]
 }

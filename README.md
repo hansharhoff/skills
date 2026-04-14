@@ -25,3 +25,4 @@ claude plugin discover
 ## Plugins
 
 - **teach-tech** — Interactive technology teaching sessions with guided examples and hands-on exercises
+- **repo-cleanup** — Audit and clean up a repository for quality issues with prioritized reporting
