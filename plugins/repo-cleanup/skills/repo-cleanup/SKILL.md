@@ -22,7 +22,7 @@ present a prioritized report of remaining findings for the user to triage.
 Read project config files to understand what tools are available:
 - `pyproject.toml`, `.pre-commit-config.yaml`, `.flake8`, `setup.cfg`, `Makefile`, etc.
 - Identify: package manager (uv/pip/poetry), linters (ruff/flake8/pylint), formatters (ruff/black),
-  type checkers (pyright/mypy), test runner (pytest), pre-commit hooks
+  type checkers (ty/pyright/mypy), test runner (pytest), pre-commit hooks
 - Note the run commands (e.g., `uv run pytest`, `npm test`, `cargo test`)
 
 ### 2. Run automated checks in parallel
@@ -33,7 +33,7 @@ Launch parallel agents or commands for each available tool:
 |-------|----------------|----------|
 | Pre-commit hooks | `pre-commit run --all-files` | High |
 | Tests + coverage | `uv run pytest tests -m "not slow" --tb=short -q --cov=src --cov=common --cov-report=term-missing` | High |
-| Type checker | `uv run pyright` or `uv run mypy .` | Medium |
+| Type checker | `ty check` (preferred, use `uvx ty check` if not installed), `uv run pyright`, or `uv run mypy .` | Medium |
 | Linter | `uv run ruff check .` | High |
 | Formatter | `uv run ruff format --check .` | Low |
 
@@ -96,7 +96,7 @@ Group findings by priority and category. Use this format:
 - README.md:42 — references `--legacy` flag removed in commit abc123
 - ...
 
-#### Type errors
+#### Type errors (high priority only — skip minor issues unless trivially fixable)
 - src/foo.py:15 — Argument of type "str" is not assignable to parameter "x" of type "int"
 - ...
 

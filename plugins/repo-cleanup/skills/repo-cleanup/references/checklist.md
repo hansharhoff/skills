@@ -64,10 +64,14 @@ Use this as the master checklist. Run each section, collect findings, then prese
 
 ## 4. Type Hints (Priority: Medium)
 
-- Run type checker if available: `uv run pyright` or `uv run mypy`
+- Run type checker — prefer `ty check` (use `uvx ty check` if the repo doesn't have ty installed),
+  otherwise fall back to `uv run pyright` or `uv run mypy`
 - Report type errors grouped by file
-- Flag functions missing return type annotations in `src/` and `common/`
-- Flag functions with `Any` types that could be more specific
+- **Only fix high-priority type errors** (e.g., wrong argument types, missing attributes, incompatible
+  return types). Skip minor issues (e.g., missing annotations, broad `Any` types) unless the fix is
+  trivial (one-line change, obvious correct type).
+- Flag functions missing return type annotations in `src/` and `common/` (report only, don't auto-fix)
+- Flag functions with `Any` types that could be more specific (report only, don't auto-fix)
 
 ## 5. Dependencies (Priority: Low)
 
