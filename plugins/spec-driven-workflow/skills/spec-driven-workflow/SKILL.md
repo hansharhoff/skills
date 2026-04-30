@@ -183,12 +183,20 @@ A short bullet list of the code changes, grouped by repo. Reference the snapshot
 
 This section has three sub-buckets — list whichever apply, omit empty buckets:
 
-- **Blocked items**: anything in `working/BLOCKED.md`, with the blocker named.
-- **Partial items**: anything in `working/STATUS.md` flagged ⚠️ partial — what's missing, why it didn't fully ship.
-- **Asks back to the user**:
+- **Blocked items**: every row from `working/BLOCKED.md`, **numbered** (B1, B2, ...) and given **at least two sentences of context**. The first sentence names the blocker; the second explains why the dep matters and what's parked behind it. The user should be able to skim the list and recall which thread is which without opening `BLOCKED.md`. Example:
+
+  ```
+  B1. Tradex lifecycle event log (Q@TRADEX). Range plan needs a per-(style, brand)
+      event timestamp to dedup virtual carry-overs across years; currently using a
+      simple set-difference stand-in. The Tradex team owns the schema and the
+      lifecycle-owner UI; we wait on their schema flavour pick before wiring writes.
+  ```
+
+- **Partial items**: anything in `working/STATUS.md` flagged ⚠️ partial. Same numbering convention (P1, P2, ...) and same two-sentence floor — what shipped, what's missing, what completes it.
+- **Asks back to the user** (A1, A2, ...): same numbering + two-sentence floor. Cover:
   - Decisions raised during Step 0.5 (code drift) or Step 2 (spec-amendment escalation) that the user paused on.
   - Verification gaps — things the implementer couldn't test (missing access, missing data, environment problem).
-  - Proposed spec edits — anything the implementer thinks should land in the spec source on the next edit, with a one-line rationale each.
+  - Proposed spec edits — anything the implementer thinks should land in the spec source on the next edit, with rationale.
 
 End each ask with a clear prompt: *"Want me to ... ? [yes / no / something else]"*.
 
