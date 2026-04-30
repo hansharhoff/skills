@@ -1,6 +1,6 @@
 ---
 name: spec-driven-workflow
-description: "Iterate code against a spec living in a separate location (e.g. a pitches/design repo). Use this skill whenever the user asks to align code with the latest spec — common phrasings: 'let's iterate on our spec', 'pull the spec changes and align', 'run the spec-driven workflow', 'iterate', 'update against the latest spec'. The skill runs a five-step loop (refresh snapshot → code-drift check → diff + plan → implement + verify → commit + close-out summary) with bookkeeping in spec/snapshot/ and spec/working/. The closing summary lists what shipped, what's open / blocked / asks back to the user, and — when the iteration is fully complete — proposes forward-looking conversation starters."
+description: "Iterate code against a spec living in a separate location (e.g. a pitches/design repo). Use this skill whenever the user asks to align code with the latest spec — common phrasings: 'let's iterate on our spec', 'pull the spec changes and align', 'run the spec-driven workflow', 'iterate', 'update against the latest spec'. The skill runs a five-step loop (refresh snapshot → code-drift check → diff + plan → implement + verify → commit + close-out summary) with bookkeeping in spec/snapshot/ and spec/working/ (STATUS, BLOCKED, DIVERGENCES, HAPPY_PATH). The closing summary lists what shipped, what's open / blocked / asks back to the user, and — when the iteration is fully complete — proposes forward-looking conversation starters."
 ---
 
 # Spec-driven workflow
@@ -32,7 +32,8 @@ If the active repo has no `spec/` folder, set it up:
    └── working/
        ├── HAPPY_PATH.md        ← agreed demo flow + per-component tests
        ├── STATUS.md            ← compliance status across the spec surface
-       └── BLOCKED.md           ← items waiting on external dependencies
+       ├── BLOCKED.md           ← items waiting on external dependencies
+       └── DIVERGENCES.md       ← intentional code-vs-spec divergences + reasoning
    ```
 3. Run **first-time happy-path setup** with the user (see "Happy path discipline" below).
 4. Run the first iteration of the loop normally (Step 0 onwards).
@@ -47,6 +48,7 @@ If the active repo has no `spec/` folder, set it up:
 | `spec/working/HAPPY_PATH.md` | Agreed demo flow + deterministic per-component tests | Long-lived; updated each iteration |
 | `spec/working/STATUS.md` | Compliance status (per-section pass/fail/partial) | Long-lived; updated each iteration |
 | `spec/working/BLOCKED.md` | Items waiting on external deps; rolls forward | Long-lived; cleared as deps land |
+| `spec/working/DIVERGENCES.md` | Intentional code-vs-spec divergences + reasoning | Long-lived; rows clear when spec or code catches up |
 | `spec/working/CURRENT_PLAN.md` | The active iteration's plan | Created Step 1, deleted Step 3 |
 
 ## Auto mode vs interactive mode
@@ -100,10 +102,12 @@ Categories:
 - **New behaviour / new fields / new flow steps** that the snapshot doesn't describe — **surface these to the user**. They are the candidates for spec amendment.
 - **Removed behaviour** that the snapshot still describes — surface as a candidate for spec amendment.
 
+**First, read `working/DIVERGENCES.md`.** Anything listed there is a **known intentional divergence** — don't re-flag it as drift. Only surface candidates that aren't already accounted for.
+
 If candidates exist, present them as a short list **before** producing the new-spec → code plan. The user decides per item:
-- **"Amend the spec"** — note it for the next spec-source edit; flag the item as design-drift to fold back. The skill does **not** edit the spec source itself; it only documents the proposal in the iteration's notes.
+- **"Amend the spec"** — the spec source gets updated to match the code. The skill does **not** edit the spec source itself; it only notes the proposal so the user can apply it.
 - **"Revert the code"** — the change was unintended; back it out as part of this iteration.
-- **"Park it"** — leave the code as-is for now and revisit; goes into `working/BLOCKED.md` with the rationale.
+- **"Diverge intentionally"** — keep the code as-is and append a row to `working/DIVERGENCES.md` with the reasoning + a review trigger. Distinct from `BLOCKED.md`, which is for items waiting on **external** deps.
 
 Only after the user resolves each drift candidate does Step 1 proceed.
 
@@ -158,7 +162,13 @@ For each approved plan item:
 4. **Re-run the happy path** in `spec/working/HAPPY_PATH.md` to confirm no regression.
 5. Update `spec/working/STATUS.md` — mark each plan item completed / failed / partial.
 
-**Spec-amendment escalation rule**: if implementation discovers a constraint that forces a generated artifact (e.g. `api.md`) or the design itself to deviate from what the snapshot says, **stop**. Write a short note describing the constraint and the proposed change, ask the user whether the spec should be amended. Don't silently let the code outpace the spec.
+**Spec-amendment escalation rule**: if implementation discovers a constraint that forces a generated artifact (e.g. `api.md`) or the design itself to deviate from what the snapshot says, **stop**. Write a short note describing the constraint and the proposed change, then ask the user — **three** outcomes are valid:
+
+1. **Accept the amendment** — the user updates the spec source on the next edit. No bookkeeping in the code repo; the next iteration's Step 0 picks up the new wording naturally.
+2. **Reject + revert** — the constraint is wrong or the workaround is not yet warranted; back the code change out as part of this iteration.
+3. **Reject + diverge** — the user accepts that the code will live differently from the spec, on purpose. **Append a row to `working/DIVERGENCES.md`** with the reasoning + a review trigger (when to revisit). Use this sparingly — divergences are debt.
+
+Don't silently let the code outpace the spec.
 
 ### Step 3 — Commit + push
 
@@ -197,6 +207,7 @@ This section has three sub-buckets — list whichever apply, omit empty buckets:
   - Decisions raised during Step 0.5 (code drift) or Step 2 (spec-amendment escalation) that the user paused on.
   - Verification gaps — things the implementer couldn't test (missing access, missing data, environment problem).
   - Proposed spec edits — anything the implementer thinks should land in the spec source on the next edit, with rationale.
+- **Divergences added or resolved this iteration** (D1, D2, ...): only when `working/DIVERGENCES.md` was actually touched. Each entry names the divergence + whether it's new or cleared, plus the trigger to revisit. Skip the bucket when it's empty — silent is the default.
 
 End each ask with a clear prompt: *"Want me to ... ? [yes / no / something else]"*.
 
@@ -281,6 +292,28 @@ Clearing protocol:
 
 If a row sits >2 iterations, escalate — chase the dep or amend the spec.
 
+## DIVERGENCES.md — intentional code-vs-spec divergences
+
+When the user accepts that the code lives differently from the spec on purpose (Step 0.5 "Diverge intentionally" or Step 2 escalation outcome 3), the divergence goes here. Distinct from `BLOCKED.md`:
+
+- `BLOCKED.md` = waiting on **someone else** (external dep). Resolves automatically when the dep lands.
+- `DIVERGENCES.md` = **we** chose to do something different. Resolves only when **we** revisit and either update the spec or rework the code.
+
+Format:
+
+```markdown
+| # | Spec section | What spec says | What code does | Why | Review trigger | Added |
+|---|---|---|---|---|---|---|
+| D1 | §4.5 carry-over | unique on (style, brand, season) | unique on (style, brand) | Tradex event log not landed; can't dedup across years yet | When Tradex event log ships | 2026-04-30 |
+```
+
+**Resolution paths** for any row:
+1. Spec catches up (the user updates the spec to match the code) → delete the row.
+2. Code catches up (a future iteration reworks the code to match the spec) → delete the row.
+3. Review trigger fires → revisit; either of the above happens.
+
+The bookkeeping is light on purpose: if a divergence carries enough context to justify itself, the row is enough. If it doesn't, it's probably not a deliberate divergence — it's drift, and Step 0.5 should have caught it.
+
 ## Anti-patterns
 
 - **Touching `snapshot/` by hand.** Always go through Step 0. If something needs fixing, fix the live spec.
@@ -288,9 +321,10 @@ If a row sits >2 iterations, escalate — chase the dep or amend the spec.
 - **Letting generated artifacts outpace the spec.** Step 2's escalation rule exists to prevent this.
 - **Bundle commits without a snapshot bump on the first commit.** The snapshot bump signals "we're aligning to this version".
 - **Treating `CURRENT_PLAN.md` as long-lived documentation.** It's transient bookkeeping. Delete it on Step 3.
+- **Letting `DIVERGENCES.md` rows sit without a review trigger.** Every row needs a concrete "when to revisit" — without it, divergences silently calcify into permanent debt.
 
 ## Templates
 
 If the project's `spec/workflow.md` doesn't exist yet, copy this skill's body into it and tailor the source path + verification commands.
 
-For `SNAPSHOT.md`, `working/STATUS.md`, `working/BLOCKED.md`, `working/HAPPY_PATH.md`, see the example layout above — they're project-specific so adapt the columns and fields.
+For `SNAPSHOT.md`, `working/STATUS.md`, `working/BLOCKED.md`, `working/DIVERGENCES.md`, `working/HAPPY_PATH.md`, see the example layouts above — they're project-specific so adapt the columns and fields.
