@@ -194,22 +194,38 @@ End each ask with a clear prompt: *"Want me to ... ? [yes / no / something else]
 
 #### 3. Conversation starters (only when fully complete on the current spec)
 
-If `working/STATUS.md` is all ✅ and `working/BLOCKED.md` is empty **and** there are no asks back to the user, replace section 2 with a short **conversation-starter** block. These are forward-looking suggestions to keep the project moving — the user picks zero, one, or several:
+If `working/STATUS.md` is all ✅ and `working/BLOCKED.md` is empty **and** there are no asks back to the user, replace section 2 with a short **conversation-starter** block. These are forward-looking suggestions to keep the project moving.
 
-- **Spec improvements**: gaps the implementer noticed while implementing — anti-patterns creeping in, missing decision-log entries, sections that read confusingly, cross-references that drifted.
-- **Code quality improvements**: places where the implementation is brittle, tests are thin, abstractions are off, dead code, refactors that would pay back soon.
-- **Workflow / best-practice improvements**: friction the implementer hit running the loop — things to fold into the next workflow revision.
+**Format**: numbered or lettered **one-liners** the user can pick by reference (e.g. "tell me more about 2"). Each line names the concern in <12 words; the implementer holds the detail until asked. Don't expand any line until the user picks it.
 
-Frame each as a suggestion ("Want me to ... ?"), not a demand. The user picks; the next iteration starts from there.
+Three buckets — pick a few from each:
 
-#### 4. (Always) Propose updates to `HAPPY_PATH.md`
+- **Spec improvements** (S1, S2, ...): gaps noticed while implementing — anti-patterns creeping in, missing decision-log entries, sections reading confusingly, cross-references that drifted.
+- **Code quality improvements** (C1, C2, ...): brittle code, thin tests, off abstractions, dead code, refactors that would pay back soon.
+- **Workflow / best-practice improvements** (W1, W2, ...): friction the implementer hit running the loop.
 
-A one-line offer to update `working/HAPPY_PATH.md` based on what the iteration shipped:
+Example shape:
+
+```
+S1. Q@TRADEX has been open 2 iterations — escalate or design unilateral fallback.
+S2. api.md regen could be a pitches-side pre-commit check.
+C1. service.py is 1100+ lines — split by concern.
+C2. No integration test for the GIS1 cascade against real Snowflake.
+W1. Cross-repo iterations need a working/CROSS_REPO.md tracker.
+```
+
+User picks; the implementer expands the picked item with full context + a "want me to … ?" prompt; next iteration starts from there.
+
+#### 4. (Conditional) Propose updates to `HAPPY_PATH.md`
+
+If the iteration shipped behaviour-affecting changes — new flow steps, new components, new fields the planner sees, new cascade rules — propose a one-line update to `working/HAPPY_PATH.md`:
 - A new demo step exercising freshly-shipped behaviour.
 - A new sub-test locking in something the diff introduced.
 - A revision to a step whose wording drifted from current spec wording.
 
 User accepts / rejects; updates land in a follow-up commit if accepted.
+
+**If the iteration shipped no behaviour changes** (a no-op iteration, or only mechanical / cosmetic edits), **stay silent on `HAPPY_PATH.md`** — don't propose anything. The "Last verified" row gets bumped only when the happy path was actually re-run and confirmed.
 
 ## Happy path discipline
 
