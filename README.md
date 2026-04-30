@@ -26,3 +26,4 @@ claude plugin discover
 
 - **teach-tech** — Interactive technology teaching sessions with guided examples and hands-on exercises
 - **repo-cleanup** — Audit and clean up a repository for quality issues with prioritized reporting
+- **spec-driven-workflow** — Iterate code against a spec maintained in a separate location, with a snapshot-based diff loop and bookkeeping (status, blocked items, happy path) in the code repo

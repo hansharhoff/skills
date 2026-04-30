@@ -1,0 +1,7 @@
+{
+  "name": "spec-driven-workflow",
+  "description": "Iterate code against a spec maintained in a separate location. Snapshot-based diff drives each iteration's work plan; bookkeeping (status, blocked items, happy path) lives in the code repo's spec/working folder. Five-step loop: refresh snapshot → code-drift check → diff + plan → implement + verify → commit + close-out summary.",
+  "author": {
+    "name": "Hans Harhoff Andersen"
+  }
+}

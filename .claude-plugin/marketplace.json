@@ -14,6 +14,11 @@
       "name": "repo-cleanup",
       "source": "./plugins/repo-cleanup",
       "description": "Audit and clean up a repository: find typos, inconsistencies, outdated references, dead code, failing tests, type errors, linter issues, and documentation gaps"
+    },
+    {
+      "name": "spec-driven-workflow",
+      "source": "./plugins/spec-driven-workflow",
+      "description": "Iterate code against a spec maintained in a separate location. Snapshot-based diff drives each iteration's work plan; bookkeeping (status, blocked items, happy path) lives in the code repo's spec/working folder."
     }
   ]
 }
