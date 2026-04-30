@@ -33,7 +33,8 @@ If the active repo has no `spec/` folder, set it up:
        ├── HAPPY_PATH.md        ← agreed demo flow + per-component tests
        ├── STATUS.md            ← compliance status across the spec surface
        ├── BLOCKED.md           ← items waiting on external dependencies
-       └── DIVERGENCES.md       ← intentional code-vs-spec divergences + reasoning
+       ├── DIVERGENCES.md       ← intentional code-vs-spec divergences + reasoning
+       └── INVESTIGATIONS.md    ← ad-hoc data digs / production reads — append-only workbench
    ```
 3. Run **first-time happy-path setup** with the user (see "Happy path discipline" below).
 4. Run the first iteration of the loop normally (Step 0 onwards).
@@ -49,6 +50,7 @@ If the active repo has no `spec/` folder, set it up:
 | `spec/working/STATUS.md` | Compliance status (per-section pass/fail/partial) | Long-lived; updated each iteration |
 | `spec/working/BLOCKED.md` | Items waiting on external deps; rolls forward | Long-lived; cleared as deps land |
 | `spec/working/DIVERGENCES.md` | Intentional code-vs-spec divergences + reasoning | Long-lived; rows clear when spec or code catches up |
+| `spec/working/INVESTIGATIONS.md` | Ad-hoc digs into Snowflake / production data / 1.0 internals — append-only workbench | Long-lived; entries stay so re-reading the history works |
 | `spec/working/CURRENT_PLAN.md` | The active iteration's plan | Created Step 1, deleted Step 3 |
 
 ## Auto mode vs interactive mode
@@ -327,4 +329,29 @@ The bookkeeping is light on purpose: if a divergence carries enough context to j
 
 If the project's `spec/workflow.md` doesn't exist yet, copy this skill's body into it and tailor the source path + verification commands.
 
-For `SNAPSHOT.md`, `working/STATUS.md`, `working/BLOCKED.md`, `working/DIVERGENCES.md`, `working/HAPPY_PATH.md`, see the example layouts above — they're project-specific so adapt the columns and fields.
+For `SNAPSHOT.md`, `working/STATUS.md`, `working/BLOCKED.md`, `working/DIVERGENCES.md`, `working/HAPPY_PATH.md`, `working/INVESTIGATIONS.md`, see the example layouts above — they're project-specific so adapt the columns and fields.
+
+## INVESTIGATIONS.md — append-only data-dig workbench
+
+Ad-hoc digs into Snowflake / production data / external system internals that produced a finding worth keeping but didn't directly resolve a Q@PERSON or land a code change. Append-only — old entries stay so future-you can re-read what was learned + when. Findings that shape the spec ALSO get a one-line note in the change log; this file is the workbench, the change log is the record.
+
+Format per entry:
+
+```markdown
+### YYYY-MM-DD — <one-line title>
+
+**Question.** What were we trying to learn?
+
+**Method.** How did we look it up — query, file dive, conversation? Include the SQL or `file:line` so it's repeatable.
+
+**Findings.** What did we discover, with concrete numbers / quotes.
+
+**Implications.** What changed in spec / code / BLOCKED.md / DIVERGENCES.md, or "no immediate action — context only."
+```
+
+When to use:
+- ✅ Querying production / 1.0 internals to understand a data shape.
+- ✅ Discovering that an assumed table / column doesn't exist.
+- ✅ Cross-referencing the live system against the spec to settle a Q@PERSON sub-question.
+- ❌ Day-to-day debugging of one's own code (commit messages handle that).
+- ❌ Decisions or design debates (they go to `decisions.md` in the spec source, not here).
