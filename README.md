@@ -13,7 +13,7 @@ claude plugin marketplace add hansharhoff/skills
 Then install any plugin:
 
 ```bash
-claude plugin install teach-tech@hansharhoff/skills
+claude plugin install teach-tech@hansharhoff-skills
 ```
 
 Or browse available plugins:
