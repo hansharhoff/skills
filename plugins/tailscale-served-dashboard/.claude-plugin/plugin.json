@@ -1,0 +1,7 @@
+{
+  "name": "tailscale-served-dashboard",
+  "description": "Turn a locally-running web app or dashboard on a Mac into a durable, tailnet-reachable service: bind 127.0.0.1, front it with tailscale serve (HTTPS), and supervise it with a launchd LaunchDaemon. Includes a scaffold.sh that generates the run script, daemon plist, and installer.",
+  "author": {
+    "name": "Hans Harhoff Andersen"
+  }
+}

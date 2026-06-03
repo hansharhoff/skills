@@ -19,6 +19,11 @@
       "name": "spec-driven-workflow",
       "source": "./plugins/spec-driven-workflow",
       "description": "Iterate code against a spec maintained in a separate location. Snapshot-based diff drives each iteration's work plan; bookkeeping (status, blocked items, happy path) lives in the code repo's spec/working folder."
+    },
+    {
+      "name": "tailscale-served-dashboard",
+      "source": "./plugins/tailscale-served-dashboard",
+      "description": "Turn a locally-running web app or dashboard on a Mac into a durable, tailnet-reachable service: bind 127.0.0.1, front it with tailscale serve (HTTPS), and supervise it with a launchd LaunchDaemon. Includes scaffold.sh to generate the run script, daemon plist, and installer."
     }
   ]
 }
