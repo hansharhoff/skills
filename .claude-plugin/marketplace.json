@@ -24,6 +24,11 @@
       "name": "tailscale-served-dashboard",
       "source": "./plugins/tailscale-served-dashboard",
       "description": "Turn a locally-running web app or dashboard on a Mac into a durable, tailnet-reachable service: bind 127.0.0.1, front it with tailscale serve (HTTPS), and supervise it with a launchd LaunchDaemon. Includes scaffold.sh to generate the run script, daemon plist, and installer."
+    },
+    {
+      "name": "whats-next",
+      "source": "./plugins/whats-next",
+      "description": "PM-style triage + capture for the active workspace. READ mode renders a ranked dashboard of open PRs, in-session tasks, scheduled memory items, Atlassian (when MCP available), git state, and circle-back notes — ≤ 80%-of-screen, ending with a one-line action prompt. CAPTURE mode catches phrases like 'remind me to' or 'let's circle back' and routes them to a task or a dated memory file."
     }
   ]
 }
