@@ -1,0 +1,17 @@
+{
+  "name": "whats-next",
+  "version": "0.1.0",
+  "description": "PM-style triage and capture for the active workspace. Renders a ranked dashboard across open PRs, in-session tasks, scheduled memory notes, Atlassian items (when MCP available), git state, and captured circle-back items; captures new TODOs from natural-language phrases into either tasks or durable memory files.",
+  "author": {
+    "name": "Hans Harhoff Andersen"
+  },
+  "commands": [
+    { "name": "whats-next", "command": "commands/whats-next.md" }
+  ],
+  "hooks": [
+    {
+      "event": "SessionStart",
+      "spec": "hooks/session_start.json"
+    }
+  ]
+}

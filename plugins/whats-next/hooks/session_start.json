@@ -1,0 +1,15 @@
+{
+  "_comment": "SessionStart hook for the whats-next plugin. Runs bin/gather.py with --as-prompt-injection at session start so the first turn already has a <whats-next>...</whats-next> JSON block in context. The skill body picks that up via its description match. Schema follows the Claude Code 'hooks' shape (settings.json hooks.SessionStart array). If your harness uses a different shape, the plugin loader is expected to translate; gather.py itself is the durable contract — it always exits 0 and writes JSON on stdout.",
+  "SessionStart": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/bin/gather.py --as-prompt-injection",
+          "timeout": 15
+        }
+      ]
+    }
+  ]
+}
