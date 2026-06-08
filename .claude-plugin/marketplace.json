@@ -29,6 +29,11 @@
       "name": "whats-next",
       "source": "./plugins/whats-next",
       "description": "PM-style triage + capture for the active workspace. READ mode renders a ranked dashboard of open PRs, in-session tasks, scheduled memory items, Atlassian (when MCP available), git state, and circle-back notes — ≤ 80%-of-screen, ending with a one-line action prompt. CAPTURE mode catches phrases like 'remind me to' or 'let's circle back' and routes them to a task or a dated memory file."
+    },
+    {
+      "name": "agent-team-workflow",
+      "source": "./plugins/agent-team-workflow",
+      "description": "Run sub-agents alongside a warm main agent so the human's questions aren't blocked. Codifies the in-session strategy (when to dispatch vs do work in main) AND the mechanics (pre-dispatch git-status check, explicit branch convention, return contract, post-merge cleanup) for sub-Agent calls with isolation: 'worktree'. Avoids locked worktrees, uncommitted carry-over, and the 'agent reported completed but the CLI is still running' trap. Scope: a single Claude Code session."
     }
   ]
 }
