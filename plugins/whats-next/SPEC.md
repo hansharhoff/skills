@@ -112,6 +112,7 @@ A single JSON object:
 | `confluence` | `C` + ordinal | `C1` |
 | `git` | `G` + ordinal | `G1` |
 | `open_question` | `Q` + ordinal | `Q1` |
+| `handoff` | `H` + ordinal | `H1` |
 
 IDs are **stable within a single render**, not globally. When Hans types `do #106` or `defer Q2`, the skill resolves against the most-recent rendered dashboard.
 
@@ -137,12 +138,29 @@ IDs are **stable within a single render**, not globally. When Hans types `do #10
    - `searchConfluenceUsingCql` with `task.assignee = currentUser() AND task.status = "incomplete"` → inline tasks, `kind: "confluence"`.
    - `searchConfluenceUsingCql` with `mention = currentUser() AND lastModified >= -7d` → mentions, lower score.
 6. **Open questions / circle-back** — read durable memory files named `circle_back_*.md` (written by CAPTURE mode); also scan the last ~20 turns of conversation for trigger phrases not yet captured. `kind: "open_question"`, refs `Q1`, `Q2`, …
+7. **Previous-session handoff** — read `~/.claude/projects/<workspace-slug>/whats-next-handoff.md` (written by the previous run's step 8). Picks up *latent* state from prior sessions — small asides, decisions, in-flight work — that wasn't tracked elsewhere. `kind: "handoff"`, refs `H1`, `H2`, … Skipped if the file doesn't exist (e.g. first invocation in a workspace).
 
 ### Graceful degradation
 
 - gh unauthenticated → PRs collector returns empty + adds an `errors[]` entry.
 - MCP not connected → Atlassian collectors skipped silently (a single-line footer notes it).
 - Memory dir missing → memory_scheduled returns empty.
+- Handoff file missing → first-invocation case, skipped silently (no error).
+
+## Handoff persistence (write side)
+
+After every READ-mode render, the skill writes `~/.claude/projects/<workspace-slug>/whats-next-handoff.md` (always overwrites — the latest snapshot is canonical).
+
+The handoff captures **only the latent state** from the current session that won't be re-discoverable next session via the existing collectors above:
+
+- **Latent asides** — small things mentioned in passing that didn't become a PR / task / memory file / Jira ticket.
+- **Decisions made** — settled choices the user committed to (reference info, not action — surfaced only when the user asks).
+- **In-flight (not yet tracked)** — work that started but isn't in a tracked system.
+- **Open / awaited (who/what)** — blocked on someone else's response, with named person + what we're waiting on.
+
+The skill should **not** duplicate items already discoverable elsewhere (PRs, git, Jira, memory) — those are re-found via gather.py + the session-only sources on the next run.
+
+Rationale: when Hans `/clear`s a long session and starts fresh, the new session loses the conversational context entirely. PRs and tracked items survive because they're in external systems; the *latent context* would otherwise vanish. This file is the bridge.
 
 ## Ranking algorithm
 
