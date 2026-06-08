@@ -1,6 +1,6 @@
 {
   "name": "agent-team-workflow",
-  "description": "Run sub-agents alongside a warm main agent so the human's questions aren't blocked, AND avoid the silent-failure modes of worktree isolation (locked worktrees, uncommitted carry-over, premature completion reports). Codifies the in-session strategy (when to dispatch) and the mechanics (pre-dispatch git-status check, explicit branch convention, return contract, post-merge cleanup).",
+  "description": "Procedure for dispatching sub-agents (Agent tool with isolation: 'worktree') without footguns — pre-dispatch git-status check, explicit branch convention, commit-SHA verification, isolation-drift recovery, post-merge cleanup. Keeps the main agent responsive while sub-agents do isolated work.",
   "author": {
     "name": "Hans Harhoff Andersen"
   }
