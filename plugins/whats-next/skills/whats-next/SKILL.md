@@ -81,8 +81,26 @@ slug is the absolute workspace path with `/` → `-` and a leading dash).
 - Urgency: 3 if captured ≤ 7 days ago, 5 if older (forgotten penalty).
 - Title: the first non-empty line of the file.
 
+**Previous-session handoff** — read
+`$HOME/.claude/projects/<workspace-slug>/whats-next-handoff.md` if it exists.
+This is the file written by **step 8** of a previous READ-mode run; it
+carries forward the *latent* context (small asides, decisions, in-flight
+work) that hadn't graduated to PRs / tasks / Jira / memory before that
+prior session ended.
+- For each bullet under `## Latent asides` / `## In-flight (not yet tracked)`
+  / `## Open / awaited (who/what)`:
+  - `kind: "handoff"`, `ref: "H<n>"` (numbered in document order).
+  - Urgency: 4 if the handoff was written ≤ 24h ago, **6 if older** (older
+    handoff = more risk of being forgotten — bump it up).
+  - Title: the bullet's text, trimmed to a sensible one-liner.
+- Don't include items under `## Decisions made` as dashboard items — they're
+  reference info, not action. Surface them only if the user explicitly asks
+  "what did I decide?" via the closing-question prompt.
+- Add a one-line footer: `(carried from handoff written <relative time ago>)`.
+
 (Scanning the last ~20 turns of conversation for ungestured trigger phrases
-is a stretch goal — punt if it adds noise.)
+is a stretch goal — punt if it adds noise. Step 8's handoff-write covers
+most of what that scan would catch anyway.)
 
 ### 3. Re-sort and apply the budget
 
@@ -94,7 +112,7 @@ Drop items with `score < 1.0`.
 Apply the 80%-of-screen budget:
 - ≤ 4 items per section.
 - Sections render in this order: Pull Requests, Tasks, Scheduled, Atlassian,
-  Local, Open questions.
+  Local, Open questions, Carried over.
 - Empty sections are dropped silently.
 - If total items > what fits, append a trailing line:
   `(showing N of M items · /whats-next --all for full)`
@@ -132,6 +150,10 @@ Next: <action verb> <ref> — <one-line why>
   Q1  "revisit the copy-skip design"                18h ago · no date
   Q2  "check the bestseller frontier"               4h ago · TODAY
 
+📋 Carried over (N items from previous handoff · written 14h ago)
+  H1  "double-check the CA cert path on macOS"      latent aside
+  H2  "Dennis pending: Members:Read org perm"       open / awaited
+
 ➤ Take action on #106? (admin-merge / wait for review / ping reviewer / drop)
 ```
 
@@ -147,6 +169,7 @@ Pick the closing-question verb from the top item's state:
 | Jira High/Highest | look at the ticket | reassign / comment / drop |
 | Confluence inline task | open the page | drop |
 | Circle-back captured | revisit | reschedule / convert to task / drop |
+| Carried-over handoff item | pick up | promote to task / drop |
 | Git uncommitted | commit or stash | drop |
 
 ### 5. Empty-state outputs
@@ -167,6 +190,78 @@ resolve the reference against the most-recent rendered dashboard.
 If the slash command is invoked as `/whats-next --all`, bypass the per-section
 4-item cap and render everything. Drop threshold (`score < 1.0`) still
 applies.
+
+### 8. Write a handoff for the next session
+
+**Always overwrite** `$HOME/.claude/projects/<workspace-slug>/whats-next-handoff.md`
+after rendering the dashboard. The latest invocation is canonical; previous
+handoffs don't matter once a fresh one is written.
+
+The point is to capture *latent* state from THIS session's conversation —
+the stuff that wouldn't otherwise survive into the next session. Things
+already tracked elsewhere (PRs in `gh`, issues in Jira, items in TaskList,
+files under `memory/`) are re-discoverable next session via gather.py — no
+need to duplicate them in the handoff.
+
+**What to capture** (scan the current session's conversation for):
+
+- **Latent asides** — small things mentioned in passing that didn't get
+  promoted to a PR, task, memory file, or Jira item. Hans's specific concern:
+  "the small tasks mentioned in passing". Example: *"and we should double-
+  check the CA cert path on macOS later"*.
+- **Decisions made** — substantive choices the user committed to this session
+  that future-you should treat as settled (so we don't re-litigate them next
+  time). Example: *"agreed: skel pattern uses /etc/appretio-skel/ with first-
+  run-only semantics"*.
+- **In-flight (not yet tracked)** — work that's started but isn't in a
+  tracked system yet. Example: *"started drafting a script to verify the GH
+  App token can read org members; abandoned mid-debug"*.
+- **Open / awaited (who/what)** — things blocked on someone else's response,
+  with the named person and what we're waiting on. Example: *"Dennis: add
+  Members:Read org permission to the appretio-bot App"*.
+
+**Format**:
+
+```
+---
+written_at: <ISO 8601 UTC>
+session_duration_approx: <best estimate, e.g. "4h">
+top_focus: <one-line summary of what this session was mostly about>
+---
+
+# Carried forward
+
+## Latent asides
+- <bullet, one line each>
+
+## Decisions made
+- <bullet>
+
+## In-flight (not yet tracked)
+- <bullet>
+
+## Open / awaited (who/what)
+- <person>: <what we're waiting on>
+```
+
+**Rules**:
+
+- **Empty sections are omitted** — don't render headers with no content.
+- **If there's nothing worth carrying**, write just the frontmatter + one
+  line `(nothing carried over — fresh slate)`.
+- **Don't duplicate** items that gather.py would re-discover (open PRs, git
+  state, Jira tickets, scheduled memory files). The handoff is for things
+  those sources *won't* surface.
+- **Keep each bullet to one line** — if it needs a paragraph, it probably
+  belongs as a circle-back memory file (CAPTURE mode) or a task instead.
+- **Bullets that the user has acted on this session** (the asides they
+  resolved before the dashboard ran) should not appear — only carry forward
+  what's *still* open.
+
+After writing the file, end the response. Do **not** announce the handoff
+file path in the dashboard — it's an invisible carry-forward mechanism, not
+a user-facing artifact. If the user asks where it lives, tell them. Otherwise
+stay quiet.
 
 ---
 
