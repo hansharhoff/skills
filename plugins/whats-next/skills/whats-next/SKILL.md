@@ -87,16 +87,29 @@ This is the file written by **step 8** of a previous READ-mode run; it
 carries forward the *latent* context (small asides, decisions, in-flight
 work) that hadn't graduated to PRs / tasks / Jira / memory before that
 prior session ended.
+
 - For each bullet under `## Latent asides` / `## In-flight (not yet tracked)`
   / `## Open / awaited (who/what)`:
   - `kind: "handoff"`, `ref: "H<n>"` (numbered in document order).
-  - Urgency: 4 if the handoff was written ≤ 24h ago, **6 if older** (older
-    handoff = more risk of being forgotten — bump it up).
   - Title: the bullet's text, trimmed to a sensible one-liner.
+- **Urgency varies by section** (so blockers outrank speculation):
+  - `Open / awaited (who/what)` → base **5** (someone is blocking on us)
+  - `In-flight (not yet tracked)` → base **4** (stale work-in-progress)
+  - `Latent asides` → base **3** (speculative)
+  - **Add +1 to the base** if the handoff file was written more than 24h ago
+    (forgotten-penalty). So an "Open / awaited" item in a day-old handoff
+    scores 6.
 - Don't include items under `## Decisions made` as dashboard items — they're
   reference info, not action. Surface them only if the user explicitly asks
   "what did I decide?" via the closing-question prompt.
 - Add a one-line footer: `(carried from handoff written <relative time ago>)`.
+
+**Parse robustness.** If the handoff file is unparseable — YAML frontmatter
+broken, expected sections missing, non-UTF-8 content, truncated mid-bullet,
+etc. — log a one-line warning into the dashboard footer
+(`(handoff: unparseable — treating as absent)`) and proceed as if the file
+doesn't exist. Don't fail the render. Same graceful-degradation pattern as
+gather.py's collectors.
 
 (Scanning the last ~20 turns of conversation for ungestured trigger phrases
 is a stretch goal — punt if it adds noise. Step 8's handoff-write covers
@@ -151,8 +164,8 @@ Next: <action verb> <ref> — <one-line why>
   Q2  "check the bestseller frontier"               4h ago · TODAY
 
 📋 Carried over (N items from previous handoff · written 14h ago)
-  H1  "double-check the CA cert path on macOS"      latent aside
-  H2  "Dennis pending: Members:Read org perm"       open / awaited
+  H1  "Dennis pending: Members:Read org perm"       open / awaited
+  H2  "double-check the CA cert path on macOS"      latent aside
 
 ➤ Take action on #106? (admin-merge / wait for review / ping reviewer / drop)
 ```
@@ -197,13 +210,30 @@ applies.
 after rendering the dashboard. The latest invocation is canonical; previous
 handoffs don't matter once a fresh one is written.
 
-The point is to capture *latent* state from THIS session's conversation —
-the stuff that wouldn't otherwise survive into the next session. Things
-already tracked elsewhere (PRs in `gh`, issues in Jira, items in TaskList,
-files under `memory/`) are re-discoverable next session via gather.py — no
-need to duplicate them in the handoff.
+The point is to capture *latent* state — the stuff that wouldn't otherwise
+survive into the next session. Things already tracked elsewhere (PRs in
+`gh`, issues in Jira, items in TaskList, files under `memory/`) are
+re-discoverable next session via gather.py + the session-only sources, so
+they don't belong in the handoff.
 
-**What to capture** (scan the current session's conversation for):
+**Compose the new handoff in three passes, in order:**
+
+#### Pass 1 — carry forward what's still open from the previous handoff
+
+If the previous handoff file exists, read it first. For each entry under
+`## Latent asides` / `## In-flight (not yet tracked)` / `## Open / awaited
+(who/what)`:
+
+- If the user **resolved or acted on it** during this session — drop it.
+- If it's **still open** — carry it forward into the new handoff under the
+  same section. Preserve its original wording.
+
+For `## Decisions made`: review each entry. Keep those that are still
+load-bearing context for future work. Drop stale or superseded decisions.
+
+#### Pass 2 — capture this session's new latent state
+
+Scan THIS session's conversation for things to add. Four bucket types:
 
 - **Latent asides** — small things mentioned in passing that didn't get
   promoted to a PR, task, memory file, or Jira item. Hans's specific concern:
@@ -219,6 +249,19 @@ need to duplicate them in the handoff.
 - **Open / awaited (who/what)** — things blocked on someone else's response,
   with the named person and what we're waiting on. Example: *"Dennis: add
   Members:Read org permission to the appretio-bot App"*.
+
+**Dedup against the dashboard you just rendered.** Before adding any bullet,
+check whether its substance is already represented in the dashboard's PRs /
+Tasks / Scheduled / Atlassian / Local / Open questions sections. If yes,
+**drop it** — the next session will re-discover it via gather.py and the
+session-only sources, so duplicating it in the handoff would produce a
+duplicate dashboard item.
+
+Apply the same dedup against the carried-forward items from Pass 1: if the
+session's new latent state restates something already in Pass 1's bullets,
+prefer the carried bullet (it's older — preserves history).
+
+#### Pass 3 — write the file
 
 **Format**:
 
