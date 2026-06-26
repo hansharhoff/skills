@@ -1,0 +1,7 @@
+{
+  "name": "spec-loop",
+  "description": "Iterate code against a spec living in the SAME repository, using a pinned-commit-hash alignment (not a copy/snapshot). Each iteration: read the deliverable-folder diff since last alignment, code-drift since last alignment, surface inconsistencies, plan, implement+verify, commit, close out. Opinionated deliverable shape (INTRO.md + SPEC.md + implementation/) with HARD/AGREED/INCIDENTAL tier model. Repo-agnostic: defaults to `specs/` as the spec root, override via `.spec-loop.toml`.",
+  "author": {
+    "name": "Hans Harhoff Andersen"
+  }
+}
