@@ -16,9 +16,9 @@
       "description": "Audit and clean up a repository: find typos, inconsistencies, outdated references, dead code, failing tests, type errors, linter issues, and documentation gaps"
     },
     {
-      "name": "spec-driven-workflow",
-      "source": "./plugins/spec-driven-workflow",
-      "description": "Iterate code against a spec maintained in a separate location. Snapshot-based diff drives each iteration's work plan; bookkeeping (status, blocked items, happy path) lives in the code repo's spec/working folder."
+      "name": "spec-loop",
+      "source": "./plugins/spec-loop",
+      "description": "Iterate code against an in-repo spec using pinned-commit-hash alignment (no copies). Six-step loop with opinionated deliverable shape (INTRO/SPEC/implementation) and HARD/AGREED/INCIDENTAL tier model. Repo-agnostic: defaults to `specs/`, override via `.spec-loop.toml`."
     },
     {
       "name": "tailscale-served-dashboard",
