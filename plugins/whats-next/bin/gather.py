@@ -315,6 +315,13 @@ def _build_pr_item(
 DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
 KEYWORD_RE = re.compile(r"\b(remind me|revisit|TODO|circle back|follow[- ]up|due)\b", re.IGNORECASE)
 TOMORROW_RE = re.compile(r"\bTOMORROW\b")
+# A due-date is trusted ONLY from an explicit `target_date:` field (the
+# circle-back frontmatter schema), never scraped from arbitrary body prose —
+# a date mentioned in the body is usually a reference/report date, not a
+# deadline.
+TARGET_DATE_RE = re.compile(r"^\s*target_date:\s*[\"']?(\d{4}-\d{2}-\d{2})", re.MULTILINE)
+# Genuine reminders written by CAPTURE mode are `circle_back_*.md`.
+CIRCLE_BACK_PREFIX = "circle_back"
 
 
 def _workspace_slug(workspace: Path) -> str:
@@ -367,27 +374,36 @@ def collect_memory_scheduled(
             continue
 
         has_keyword = bool(KEYWORD_RE.search(text))
-        dates = DATE_RE.findall(text)
         has_tomorrow = bool(TOMORROW_RE.search(text))
+        target_match = TARGET_DATE_RE.search(text)
 
-        # Skip files with no signal.
-        if not (has_keyword or dates or has_tomorrow):
+        # Only genuine circle-back reminders are scheduled items. Standing
+        # auto-memory (feedback/project/reference facts, plus the MEMORY.md
+        # index) lives in the same directory and routinely contains prose
+        # dates and words like "revisit" / "TODO" / "due" — those must NOT be
+        # mistaken for due reminders. A file qualifies iff it is a
+        # `circle_back_*` note or carries an explicit `target_date:` field.
+        is_reminder = path.name.startswith(CIRCLE_BACK_PREFIX) or target_match is not None
+        if not is_reminder:
             continue
 
-        # Earliest future-or-past target date in the file (first wins for stability).
+        # Trust a due-date only from `target_date:` or the TOMORROW keyword —
+        # never from body prose. A reminder with neither is a dateless
+        # "keep on radar" note.
         target: datetime | None = None
-        if dates:
+        if target_match:
             try:
-                target = datetime.strptime(dates[0], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                target = datetime.strptime(target_match.group(1), "%Y-%m-%d").replace(
+                    tzinfo=timezone.utc
+                )
             except ValueError:
                 target = None
         if target is None and has_tomorrow:
-            target = datetime.combine(today, datetime.min.time()).replace(
-                tzinfo=timezone.utc
-            )
             from datetime import timedelta
 
-            target = target + timedelta(days=1)
+            target = datetime.combine(today, datetime.min.time()).replace(
+                tzinfo=timezone.utc
+            ) + timedelta(days=1)
 
         try:
             stat = path.stat()

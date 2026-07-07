@@ -176,16 +176,29 @@ def _write_memory(home: Path, workspace: Path, name: str, body: str) -> Path:
     return path
 
 
+def _fm(target_date: str | None = None, extra: str = "") -> str:
+    """Minimal circle-back frontmatter block."""
+    lines = ["---", "captured_at: 2026-06-01T00:00:00Z"]
+    if target_date is not None:
+        lines.append(f"target_date: {target_date}")
+    if extra:
+        lines.append(extra)
+    lines.append("---")
+    return "\n".join(lines) + "\n"
+
+
 def test_memory_overdue_today_thisweek_future(tmp_path):
     home = tmp_path / "home"
     workspace = tmp_path / "ws"
     workspace.mkdir()
     today = NOW.date()
-    _write_memory(home, workspace, "overdue.md", f"# revisit\nTODO {today - timedelta(days=3)}\n")
-    _write_memory(home, workspace, "today.md", f"# today\nremind me {today}\n")
-    _write_memory(home, workspace, "week.md", f"# week\nrevisit {today + timedelta(days=3)}\n")
-    _write_memory(home, workspace, "future.md", f"# future\nTODO {today + timedelta(days=60)}\n")
-    _write_memory(home, workspace, "nodate.md", "# nodate\nTODO clean this up\n")
+    # Dates are trusted from `target_date:` frontmatter on circle_back_* files.
+    _write_memory(home, workspace, "circle_back_overdue.md", _fm(str(today - timedelta(days=3))) + "# revisit\n")
+    _write_memory(home, workspace, "circle_back_today.md", _fm(str(today)) + "# today\n")
+    _write_memory(home, workspace, "circle_back_week.md", _fm(str(today + timedelta(days=3))) + "# week\n")
+    _write_memory(home, workspace, "circle_back_future.md", _fm(str(today + timedelta(days=60))) + "# future\n")
+    # A circle_back note with no target_date is a dateless "keep on radar" item.
+    _write_memory(home, workspace, "circle_back_nodate.md", _fm() + "# nodate\nrevisit this later\n")
     _write_memory(home, workspace, "boring.md", "# nothing interesting\nbody text\n")
 
     items, errors = gather.collect_memory_scheduled(workspace, home=home, now=NOW)
@@ -198,6 +211,67 @@ def test_memory_overdue_today_thisweek_future(tmp_path):
     assert refs["no date"]["urgency"] == 2
     # The boring file should not appear.
     assert "nothing interesting" not in {it["title"] for it in items}
+
+
+def test_memory_ignores_standing_auto_memory(tmp_path):
+    """Regression: standing feedback/project facts (with prose dates + keyword
+    words) and the MEMORY.md index must NOT be reported as scheduled reminders."""
+    home = tmp_path / "home"
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    # A project fact: has a prose date and the word "TODO"/"revisit"/"due" — but
+    # is not a circle_back file and has no target_date frontmatter.
+    _write_memory(
+        home,
+        workspace,
+        "project_pem_rotation_todo.md",
+        "---\nname: pem-rotation\nmetadata:\n  type: project\n---\n"
+        "# PEM rotation TODO\nWe should revisit this; PR #14 landed 2026-06-01. Follow-up due later.\n",
+    )
+    _write_memory(
+        home,
+        workspace,
+        "feedback_pr_links.md",
+        "---\nmetadata:\n  type: feedback\n---\n# Include PR links\nAlways cite the URL. Captured 2026-06-08.\n",
+    )
+    _write_memory(home, workspace, "MEMORY.md", "# Memory index\n- [x](y.md) — revisit TODO 2026-06-04\n")
+
+    items, errors = gather.collect_memory_scheduled(workspace, home=home, now=NOW)
+    assert errors == []
+    assert items == []
+
+
+def test_memory_target_date_without_circle_back_prefix(tmp_path):
+    """A file carrying an explicit target_date qualifies even if not named circle_back_*."""
+    home = tmp_path / "home"
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    today = NOW.date()
+    _write_memory(home, workspace, "reminder.md", _fm(str(today - timedelta(days=1))) + "# do the thing\n")
+    items, errors = gather.collect_memory_scheduled(workspace, home=home, now=NOW)
+    assert errors == []
+    assert len(items) == 1
+    assert items[0]["raw"]["bucket"] == "overdue"
+    assert items[0]["raw"]["target_date"] == str(today - timedelta(days=1))
+
+
+def test_memory_circle_back_ignores_body_prose_date(tmp_path):
+    """A circle_back note whose body mentions a date but has no target_date is
+    dateless — the prose date must not be scraped into an overdue reminder."""
+    home = tmp_path / "home"
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    _write_memory(
+        home,
+        workspace,
+        "circle_back_aws_sso.md",
+        _fm() + "# Look at AWS SSO\nItem #8 of the 2026-07-02 report; no deadline.\n",
+    )
+    items, errors = gather.collect_memory_scheduled(workspace, home=home, now=NOW)
+    assert errors == []
+    assert len(items) == 1
+    assert items[0]["raw"]["bucket"] == "no date"
+    assert items[0]["raw"]["target_date"] is None
 
 
 def test_memory_missing_dir_returns_empty(tmp_path):
