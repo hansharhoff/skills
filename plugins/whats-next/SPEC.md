@@ -126,7 +126,7 @@ IDs are **stable within a single render**, not globally. When Hans types `do #10
 ### gather.py (CLI-collectable)
 
 1. **PRs** — `gh pr list --author @me --state open` for the workspace's git remote. Yields one item per open PR.
-2. **Memory-scheduled** — scans `~/.claude/projects/<workspace-slug>/memory/*.md` for date markers (`YYYY-MM-DD`, `TOMORROW`) and "remind me" / "revisit" / "TODO" keywords.
+2. **Memory-scheduled** — scans `~/.claude/projects/<workspace-slug>/memory/*.md`, but only genuine circle-back reminders count: a file qualifies iff it is named `circle_back_*.md` **or** carries an explicit `target_date:` frontmatter field. Standing auto-memory (feedback/project/reference facts, the `MEMORY.md` index) lives in the same directory and routinely contains prose dates and words like "revisit"/"TODO"/"due" — those are ignored. The due-date is read only from `target_date:` (or the `TOMORROW` keyword), never scraped from body prose (which is usually a reference/report date, not a deadline); a qualifying reminder with no such date is a dateless "keep on radar" note.
 3. **Git state** — `git status --porcelain` for uncommitted files + `git log origin/<branch>..HEAD --oneline` for unpushed commits.
 
 ### SKILL.md (session-only, layered on top)
