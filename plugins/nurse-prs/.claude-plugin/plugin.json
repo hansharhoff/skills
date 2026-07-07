@@ -1,0 +1,7 @@
+{
+  "name": "nurse-prs",
+  "description": "Drive a repo's open PRs (and related issues) to a landable state WITHOUT approving or merging: respond to review comments, validate changes end-to-end and post the results, keep every branch mergeable (resolve conflicts as siblings land), flip validated drafts to ready, triage related issues, keep a persistent monitor up for autonomous response to new activity, and surface merge/approve/design decisions to the human as crisp judgement asks.",
+  "author": {
+    "name": "Hans Harhoff Andersen"
+  }
+}

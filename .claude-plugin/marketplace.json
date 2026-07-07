@@ -34,6 +34,11 @@
       "name": "agent-team-workflow",
       "source": "./plugins/agent-team-workflow",
       "description": "Run sub-agents alongside a warm main agent so the human's questions aren't blocked. Codifies the in-session strategy (when to dispatch vs do work in main) AND the mechanics (pre-dispatch git-status check, explicit branch convention, return contract, post-merge cleanup) for sub-Agent calls with isolation: 'worktree'. Avoids locked worktrees, uncommitted carry-over, and the 'agent reported completed but the CLI is still running' trap. Scope: a single Claude Code session."
+    },
+    {
+      "name": "nurse-prs",
+      "source": "./plugins/nurse-prs",
+      "description": "Drive a repo's open PRs (and related issues) to a landable state WITHOUT approving or merging: respond to review comments, validate changes end-to-end and post the evidence, keep every branch mergeable (resolve conflicts as siblings land), flip validated drafts to ready, triage related issues, and keep a persistent monitor up (bin/pr-watch.sh) so new activity is handled autonomously. Surfaces every merge/approve/design decision to the human as a crisp judgement ask. Scope: one repo's PR queue, ongoing across a session."
     }
   ]
 }
