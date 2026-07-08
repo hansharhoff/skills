@@ -35,8 +35,17 @@ waiting to be asked.
 
 ## The loop (run each pass)
 
-1. **Enumerate.** `gh pr list --state open --json number,title,isDraft,mergeable,mergeStateStatus,reviewDecision,headRefName` plus `gh issue list --state open` for related issues.
-2. **Assess each PR.** `gh pr view <n> --json isDraft,mergeable,mergeStateStatus,statusCheckRollup,reviewDecision,comments,reviews,commits`.
+1. **Enumerate.** `gh pr list --state open --json number,title,isDraft,mergeable,mergeStateStatus,reviewDecision,reviews,headRefName` plus `gh issue list --state open` for related issues.
+2. **Assess each PR.** `gh pr view <n> --json isDraft,mergeable,mergeStateStatus,statusCheckRollup,reviewDecision,comments,reviews,commits`. Derive state from the **combination** of `mergeStateStatus` (the truth for "can this land": `CLEAN`/`BLOCKED`/`UNSTABLE`/`DIRTY`) and `reviews[]` (state + author — *who* approved / requested changes). **Never key off `reviewDecision` alone**: GitHub only populates it when branch protection *requires* a review, so it is empty for ordinary approvals — treat it as "is the required gate satisfied", never "has anyone approved". Rule of thumb:
+
+   | State | Read it as |
+   |---|---|
+   | `CLEAN` | mergeable now — surface for human merge |
+   | `BLOCKED` + 0 approvals in `reviews[]` | needs a reviewer |
+   | `BLOCKED` + approvals present | a required code-owner is still outstanding — identify which path |
+   | `UNSTABLE` | inspect the non-required failing check |
+   | `DIRTY`/`CONFLICTING` | rebase / merge the base branch in |
+
 3. **Act, in priority order:**
    - **CI red** → read the failure, fix it, push to the branch, comment what you found.
    - **`CONFLICTING`/`DIRTY`** → merge the base branch in, resolve conflicts, push. Re-check after *every* sibling PR merges — a green queue goes conflicting the moment one lands.
