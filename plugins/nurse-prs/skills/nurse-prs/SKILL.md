@@ -82,6 +82,18 @@ activity filtered out, transient `gh` failures swallowed. Run it as a
 `persistent` background monitor; each event is a cue to run another loop pass
 on the affected PR/issue.
 
+**Bot/App-identity accounts** (no personal `gh` auth; working through a GitHub
+App installation token): plain `gh` is unauthenticated, `/user` returns 403,
+and App tokens expire after ~1h. Use the built-in hooks — a token-mint command
+re-run each tick, plus an explicit own-identity override:
+
+```bash
+PR_WATCH_TOKEN_CMD=appretio-mint-token PR_WATCH_ME='appretio-bot[bot]' bash pr-watch.sh <owner/repo>
+```
+
+The script aborts loudly if it cannot read the repo, so a dead watch is
+visible instead of silently quiet.
+
 ## Reporting
 
 - **Restate results in your own text** — a classifier/human reading only your
