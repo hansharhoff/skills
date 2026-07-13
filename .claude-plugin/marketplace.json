@@ -39,6 +39,11 @@
       "name": "nurse-prs",
       "source": "./plugins/nurse-prs",
       "description": "Drive a repo's open PRs (and related issues) to a landable state WITHOUT approving or merging: respond to review comments, validate changes end-to-end and post the evidence, keep every branch mergeable (resolve conflicts as siblings land), flip validated drafts to ready, triage related issues, and keep a persistent monitor up (bin/pr-watch.sh) so new activity is handled autonomously. Surfaces every merge/approve/design decision to the human as a crisp judgement ask. Scope: one repo's PR queue, ongoing across a session."
+    },
+    {
+      "name": "post-to-hansharhoff-blog",
+      "source": "./plugins/post-to-hansharhoff-blog",
+      "description": "Publish or update posts on the hansharhoff.dk WordPress blog via the REST API. Handles auth (env var, local file, or a 1Password op:// reference), the site's incomplete TLS chain, and its bot-protection WAF. Credentials are never committed."
     }
   ]
 }

@@ -1,0 +1,7 @@
+{
+  "name": "post-to-hansharhoff-blog",
+  "description": "Publish or update posts on the hansharhoff.dk WordPress blog via the REST API, with safe credential handling",
+  "author": {
+    "name": "Hans Harhoff Andersen"
+  }
+}
