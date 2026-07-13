@@ -20,14 +20,18 @@ import os, sys, json, ssl, base64, argparse, subprocess, urllib.request, urllib.
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-def _resolve(val):
-    """Resolve a 1Password secret reference (op://...) via the `op` CLI; pass others through."""
+def _resolve(val, op_bin="op", account=None):
+    """Resolve a 1Password secret reference (op://...) via the op CLI; pass others through.
+    op_bin lets you point at a specific binary (e.g. Windows op.exe wrapper under WSL);
+    account selects one of several signed-in accounts."""
     if val.startswith("op://"):
+        cmd = [op_bin, "read", val] + (["--account", account] if account else [])
         try:
-            out = subprocess.run(["op", "read", val], capture_output=True, text=True, check=True)
+            out = subprocess.run(cmd, capture_output=True, text=True, check=True,
+                                 stdin=subprocess.DEVNULL)
             return out.stdout.strip()
         except FileNotFoundError:
-            raise SystemExit("1Password CLI `op` not found. Install it and sign in, or use a plaintext value.")
+            raise SystemExit(f"1Password CLI '{op_bin}' not found. Install it and sign in, or use a plaintext value.")
         except subprocess.CalledProcessError as e:
             raise SystemExit(f"Could not read {val} from 1Password: {e.stderr.strip()}")
     return val
@@ -52,9 +56,11 @@ def load_creds():
     if missing:
         raise SystemExit("Missing credentials: " + ", ".join(missing) +
                          f".\nSet them as env vars or in {path} (copy credentials.env.example).")
-    site = _resolve(creds["WP_SITE"]).rstrip("/")
-    user = _resolve(creds["WP_USER"])
-    pw = _resolve(creds["WP_APP_PW"]).replace(" ", "")     # WP ignores spaces in app passwords
+    op_bin = os.environ.get("OP_BIN") or creds.get("OP_BIN") or "op"
+    account = os.environ.get("OP_ACCOUNT") or creds.get("OP_ACCOUNT")
+    site = _resolve(creds["WP_SITE"], op_bin, account).rstrip("/")
+    user = _resolve(creds["WP_USER"], op_bin, account)
+    pw = _resolve(creds["WP_APP_PW"], op_bin, account).replace(" ", "")   # WP ignores spaces in app pw
     auth = base64.b64encode(f"{user}:{pw}".encode()).decode()
     return site, auth
 

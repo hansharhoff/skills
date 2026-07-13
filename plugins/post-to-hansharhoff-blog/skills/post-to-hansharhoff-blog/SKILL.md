@@ -16,7 +16,9 @@ Publishes to Hans's self-hosted WordPress (host: Simply.com) via the REST API.
 `WP_APP_PW` is a WordPress **Application Password** (WP admin → Users → Profile → Application Passwords;
 revocable there). Any value may be a **1Password reference** like `op://Private/hansharhoff-blog/credential`,
 which `publish.py` resolves at runtime via the `op` CLI — so no plaintext secret need ever touch disk.
-Tip: on a new machine you can just mint a *fresh* Application Password there instead of copying the secret.
+With an `op://` reference you may also set `OP_ACCOUNT` (pick one of several signed-in 1Password accounts)
+and `OP_BIN` (path to the `op` binary if it isn't on PATH — e.g. WSL calling the Windows `op.exe` through a
+wrapper). Tip: on a new machine you can just mint a *fresh* Application Password there instead of copying the secret.
 
 Never print the password in output or commit it anywhere.
 
