@@ -1,0 +1,7 @@
+{
+  "name": "session-retro",
+  "description": "Reflect on a Claude Code session and produce an honest retrospective one-pager: what went well/poorly (with lessons), techniques worth keeping, a token-hygiene grade (where /clear and /compact would have saved money, with tips), a 'did we forget anything?' cross-check against the whats-next handoff/memory/tasks, and forward-looking suggestions (new skills, CLAUDE.md/memory edits, how we work together). Deterministic analyzer digests the transcript so the model never reads the raw JSONL; output is delivered as a reviewable Artifact.",
+  "author": {
+    "name": "Hans Harhoff Andersen"
+  }
+}

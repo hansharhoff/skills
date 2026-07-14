@@ -44,6 +44,11 @@
       "name": "post-to-hansharhoff-blog",
       "source": "./plugins/post-to-hansharhoff-blog",
       "description": "Publish or update posts on the hansharhoff.dk WordPress blog via the REST API. Handles auth (env var, local file, or a 1Password op:// reference), the site's incomplete TLS chain, and its bot-protection WAF. Credentials are never committed."
+    },
+    {
+      "name": "session-retro",
+      "source": "./plugins/session-retro",
+      "description": "Reflect on a Claude Code session and produce an honest retrospective one-pager: what went well/poorly (with lessons), techniques worth keeping, a token-hygiene grade (where /clear and /compact would have saved money, plus tips), a 'did we forget anything?' cross-check against the whats-next handoff/memory/tasks, and forward-looking suggestions (new skills, CLAUDE.md edits, how we work together). A deterministic analyzer digests the transcript so the model never reads the raw JSONL; output is delivered as a reviewable Artifact."
     }
   ]
 }
