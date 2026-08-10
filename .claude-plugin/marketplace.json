@@ -49,6 +49,11 @@
       "name": "session-retro",
       "source": "./plugins/session-retro",
       "description": "Reflect on a Claude Code session and produce an honest retrospective one-pager: what went well/poorly (with lessons), techniques worth keeping, a token-hygiene grade (where /clear and /compact would have saved money, plus tips), a 'did we forget anything?' cross-check against the whats-next handoff/memory/tasks, and forward-looking suggestions (new skills, CLAUDE.md edits, how we work together). A deterministic analyzer digests the transcript so the model never reads the raw JSONL; output is delivered as a reviewable Artifact."
+    },
+    {
+      "name": "resumable-sessions",
+      "source": "./plugins/resumable-sessions",
+      "description": "Make Claude Code sessions survive reboots, crashes, and accidentally closed terminals: hold them in tmux, recreate the layout from one idempotent bootstrap script that re-resumes each conversation with `claude --continue` (re-asserting the cwd and permission mode that --continue does not restore), and have the OS run that script at login AND every few minutes so recovery is self-healing. Per-platform supervisor notes (launchd / systemd user timer / Task Scheduler), a tested bootstrap template, and a manual-recovery cheatsheet for rescuing a single lost conversation."
     }
   ]
 }

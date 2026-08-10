@@ -1,0 +1,7 @@
+{
+  "name": "resumable-sessions",
+  "description": "Make Claude Code sessions survive reboots, crashes, and accidentally closed terminals: hold them in a multiplexer, recreate the layout from one idempotent bootstrap script that re-resumes each conversation with `claude --continue`, and have the OS run that script at login and on an interval so recovery is self-healing rather than manual. Includes a tested bootstrap template and a manual-recovery cheatsheet.",
+  "author": {
+    "name": "Hans Harhoff Andersen"
+  }
+}
