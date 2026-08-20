@@ -15,16 +15,48 @@
 # the watch. Arms from "now", so only NEW activity is reported (no backlog).
 #
 # Usage:  bash pr-watch.sh Merchandising-Solutions/ai
+#
+# Bot/App-identity accounts (no personal gh auth, e.g. a GitHub App
+# installation token):
+#   PR_WATCH_TOKEN_CMD  — command whose stdout is exported as GH_TOKEN, run
+#                         once at start and again each tick (App installation
+#                         tokens expire after ~1h). Unset = plain gh auth.
+#   PR_WATCH_ME         — login to filter own writes by (App tokens get a 403
+#                         from /user, so autodetection fails for them).
+#
+#   PR_WATCH_TOKEN_CMD=appretio-mint-token PR_WATCH_ME='appretio-bot[bot]' \
+#     bash pr-watch.sh <owner/repo>
 set -uo pipefail
 
 repo="${1:?usage: pr-watch.sh <owner/repo>}"
-me="$(gh api user --jq .login 2>/dev/null || echo '')"
 interval="${PR_WATCH_INTERVAL:-60}"
+
+# Optional token hook: mint/refresh GH_TOKEN from PR_WATCH_TOKEN_CMD.
+token_cmd="${PR_WATCH_TOKEN_CMD:-}"
+refresh_token() {
+  [ -n "$token_cmd" ] || return 0
+  GH_TOKEN="$(bash -c "$token_cmd" 2>/dev/null)" && export GH_TOKEN
+}
+refresh_token
+
+# Fail loud, not silent: a watch that can't read the repo is a dead watch.
+if ! gh api "repos/$repo" --jq .full_name >/dev/null 2>&1; then
+  echo "[pr-watch] ERROR: cannot read $repo via gh — check auth (GH_TOKEN / PR_WATCH_TOKEN_CMD / gh auth). Aborting." >&2
+  exit 1
+fi
+
+# Own identity, for filtering out our own writes. App installation tokens
+# cannot call /user (403), so allow an explicit override.
+me="${PR_WATCH_ME:-$(gh api user --jq .login 2>/dev/null || echo '')}"
+if [ -z "$me" ]; then
+  echo "[pr-watch] WARN: own identity unresolved — own writes will NOT be filtered; set PR_WATCH_ME." >&2
+fi
 
 last="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 strip='(.body // "") | gsub("[\n\r\t]+"; " ") | .[0:220]'
 
 while true; do
+  refresh_token   # App installation tokens expire ~1h; re-mint each tick.
   now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
   # 1. Brand-new issues & PRs created by someone other than us.
