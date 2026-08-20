@@ -18,8 +18,8 @@ This skill turns the pattern into a procedure: pre-dispatch checks, an explicit 
 ## What it covers
 
 - **Decision: sub-agent vs main** — a small table that prevents 30-second dispatches for 10-second work.
-- **Pre-dispatch checklist** — `git status` resolution, branch naming, integration-branch declaration, return-contract demand, budget.
-- **Dispatching** — `Agent` tool with `isolation: "worktree"`; parallel via single-message multi-call.
+- **Pre-dispatch checklist** — target-repo check (session cwd must BE the target repo for worktree isolation), `git status` resolution, branch naming, integration-branch declaration, return-contract demand, budget.
+- **Dispatching** — `Agent` tool with `isolation: "worktree"` when the session cwd is the target repo; cross-repo dispatches go without isolation plus prompt boilerplate that cuts a worktree off the named target checkout; parallel via single-message multi-call.
 - **Post-return verification** — required-fields check, `git log` commit-SHA cross-check, isolation-drift detection, current-branch verification, merge with `--no-ff`, restart live process, `TaskCreate` follow-ups, cleanup.
 - **Long-running CLI variant** — the "STARTED + initial-state-OK" idiom + a `Monitor` filter that catches both success AND failure signatures.
 - **Recovery from isolation drift** — when the `isolation: "worktree"` flag is ignored and the work lands on the main checkout.

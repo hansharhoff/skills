@@ -29,29 +29,40 @@ Dispatch + return + merge has a ~30 s floor even when everything works. Reserve 
 
 ## Before dispatching
 
-1. **Run `git status --porcelain`.** If empty → proceed. If non-empty:
+1. **Confirm the session cwd IS the target repo.** `isolation: "worktree"` cuts the worktree from the **session cwd's** git repo — not from whatever repo the task is about. If the session sits in a scratch or unrelated repo (the lead pattern: cwd `~/workspaces/lead`, task in `~/workspaces/<target>`), a worktree-isolated dispatch hands the agent a useless worktree of the wrong repo, and its first `git fetch origin` fails. Only use `isolation: "worktree"` when the session cwd is the target repo; for cross-repo dispatch, see *Dispatching* below.
+
+2. **Run `git status --porcelain`.** If empty → proceed. If non-empty:
    - List the modified/untracked files in chat.
    - Ask the human: "should the sub-agent inherit these changes (I'll commit first), work without seeing them (I'll stash), or branch off the dirty HEAD as-is?"
    - Don't guess. Wait for the answer. Carrying unintended dirty state through a sub-agent is the most common silent-merge-conflict source.
 
-2. **Decide the branch name before invoking `Agent`.** Pattern: `<prefix>/<short-slug>` where `<prefix>` matches the convention on the integration branch (`feat/<slug>`, `fix/<slug>`, `chore/<slug>`, or a topic prefix like `viewer/<slug>`). Put the branch name **explicitly in the prompt**. Don't let the sub-agent pick — different agents pick incompatible patterns and the main has to translate later.
+3. **Decide the branch name before invoking `Agent`.** Pattern: `<prefix>/<short-slug>` where `<prefix>` matches the convention on the integration branch (`feat/<slug>`, `fix/<slug>`, `chore/<slug>`, or a topic prefix like `viewer/<slug>`). Put the branch name **explicitly in the prompt**. Don't let the sub-agent pick — different agents pick incompatible patterns and the main has to translate later.
 
-3. **State the integration branch in the prompt explicitly.** "Branch off `<integration-branch>`". The sub-agent's git context defaults to whatever `HEAD` is at dispatch, which may not be what you want.
+4. **State the integration branch in the prompt explicitly.** "Branch off `<integration-branch>`". The sub-agent's git context defaults to whatever `HEAD` is at dispatch, which may not be what you want.
 
-4. **State the return contract.** Demand the report include:
+5. **State the return contract.** Demand the report include:
    - Files created / modified (full paths).
    - Test counts (added / total) if tests changed.
    - The branch name + the **commit SHA** (so you can verify the commit actually exists).
    - Deviations from the prompt, one-line reason each.
    - Open questions the agent punted on.
 
-5. **Set a budget.** "Aim for under 15 min, report at first clean checkpoint." Surfaces partial progress instead of polishing for an hour.
+6. **Set a budget.** "Aim for under 15 min, report at first clean checkpoint." Surfaces partial progress instead of polishing for an hour.
 
-6. **For long-running CLI work**, add: "Background the CLI via `run_in_background: true`. Return STARTED + initial-state-OK after the first ~10 healthy log lines. Do NOT wait for completion. Hand back the log path + PID so the main agent can `Monitor` it."
+7. **For long-running CLI work**, add: "Background the CLI via `run_in_background: true`. Return STARTED + initial-state-OK after the first ~10 healthy log lines. Do NOT wait for completion. Hand back the log path + PID so the main agent can `Monitor` it."
 
 ## Dispatching
 
-- `Agent` tool with `isolation: "worktree"` for any work that modifies files.
+- `Agent` tool with `isolation: "worktree"` for any work that modifies files — **only when the session cwd is the target repo** (the worktree is cut from the session cwd's repo, nothing else).
+- **Cross-repo dispatch** (session cwd ≠ target repo — e.g. a lead session in a scratch repo dispatching work on `~/workspaces/<target-repo>`): dispatch **without** isolation and put the worktree setup in the prompt, naming the absolute target checkout. Boilerplate for the prompt:
+
+  ```
+  Target repo: ~/workspaces/<target-repo> (the session you were dispatched
+  from is NOT in it). Create your own worktree off it first:
+    git -C ~/workspaces/<target-repo> worktree add .claude/worktrees/<task-slug> -b <branch> origin/main
+  Do all work inside that worktree. If your branch does not get merged,
+  clean up: git -C ~/workspaces/<target-repo> worktree remove .claude/worktrees/<task-slug>
+  ```
 - Multiple parallel sub-agents → **single message with multiple Agent tool calls** (concurrent). Sequential messages → sequential dispatch.
 - If sub-agent outputs need to feed each other → sequential. Truly orthogonal → parallel.
 
@@ -118,6 +129,7 @@ If the agent's `isolation: "worktree"` flag was ignored and the work landed on t
 ## Anti-patterns
 
 - **Spawning a sub-agent for tiny work.** Cost > benefit below ~2 min.
+- **Worktree isolation from the wrong cwd.** `isolation: "worktree"` keys off the session cwd's repo; dispatched from a scratch/unrelated repo it hands the agent a mis-targeted worktree that fails on first `git fetch origin`. Cross-repo → no isolation + the worktree-off-target boilerplate.
 - **Skipping the pre-dispatch `git status`.** Surprise carry-over later.
 - **Trusting the agent's "completed" claim without checking `git log`.** Pre-commit hooks fail silently.
 - **Trusting the agent's "completed" for long-running CLI.** The agent process can complete while the CLI is still running.
