@@ -54,6 +54,11 @@
       "name": "resumable-sessions",
       "source": "./plugins/resumable-sessions",
       "description": "Make Claude Code sessions survive reboots, crashes, and accidentally closed terminals: hold them in tmux, recreate the layout from one idempotent bootstrap script that re-resumes each conversation with `claude --continue` (re-asserting the cwd and permission mode that --continue does not restore), and have the OS run that script at login AND every few minutes so recovery is self-healing. Per-platform supervisor notes (launchd / systemd user timer / Task Scheduler), a tested bootstrap template, and a manual-recovery cheatsheet for rescuing a single lost conversation."
+    },
+    {
+      "name": "audio-course",
+      "source": "./plugins/audio-course",
+      "description": "Turn a topic into an approved audio course, or a free public book into a chapter-per-episode audiobook, delivered to a podcastfeeds Learning feed."
     }
   ]
 }

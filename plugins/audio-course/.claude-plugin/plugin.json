@@ -1,0 +1,5 @@
+{
+  "name": "audio-course",
+  "description": "Turn a topic into an approved audio course, or a public book into a chapter-per-episode audiobook, and send it to your podcastfeeds Learning feed.",
+  "author": { "name": "Hans Harhoff Andersen" }
+}
