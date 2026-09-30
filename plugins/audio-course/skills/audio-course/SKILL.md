@@ -46,6 +46,8 @@ analogy and repetition. Code goes in show notes.
      inline code, `[text](https://...)` links, `- ` bullets)
    - do not add a title line or a sign-off; the server adds "X, part 2 of 4:
      Y." and "Next up: part 3."
+   - each script must be 200 to 60000 characters (a 15 to 20 minute part is
+     roughly 13000 to 18000)
 
 ## 3. Audiobook path
 
@@ -56,6 +58,10 @@ analogy and repetition. Code goes in show notes.
    chapter heading and send each chapter as `script` with `"verbatim": true`,
    unchanged). **Stop and wait for an explicit yes.**
 2. Cap: 60 chapters.
+3. Every `script` must be 200 to 60000 characters, or the server rejects the
+   whole request. Merge a short piece (dedication, epigraph) into its
+   neighbour or leave it out, and split an over-long chapter into "Chapter 7,
+   part 1" and "Chapter 7, part 2". Say so in the chapter list you show.
 
 ## 4. Submit
 
@@ -86,8 +92,10 @@ analogy and repetition. Code goes in show notes.
 3. On failure, show the error and tell the user the file path and that
    rerunning the same curl resubmits it (resubmits are safe: existing parts are
    kept, failed ones retried). A 400 names the problem: fix the JSON and resend.
-4. On success, poll every 30 seconds until part 1 is `ready` or `error`
-   (give up after 15 minutes and say so):
+4. On success, poll every 30 seconds until part 1 is `ready`, `error` or
+   `skipped` (give up after 15 minutes and say so). For `error` or `skipped`,
+   report the part's `error` text: `skipped` usually means a chapter URL had
+   no readable text, so offer to resend that part as verbatim text instead:
 
    ```bash
    curl -sS "$URL/$TOKEN/api/course/<course_id>"
