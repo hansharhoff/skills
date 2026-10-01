@@ -92,6 +92,12 @@ analogy and repetition. Code goes in show notes.
 3. On failure, show the error and tell the user the file path and that
    rerunning the same curl resubmits it (resubmits are safe: existing parts are
    kept, failed ones retried). A 400 names the problem: fix the JSON and resend.
+   A resubmit must keep the same number of parts; a course with a different
+   shape needs a new `course_id`.
+   The response's `existing` lists parts that were already there and were left
+   untouched. If you changed any of their scripts, say so: the old version is
+   still what plays, and Hans can re-narrate it with the redo button on the
+   admin page after editing, or you can resend under a new `course_id`.
 4. On success, poll every 30 seconds until part 1 is `ready`, `error` or
    `skipped` (give up after 15 minutes and say so). For `error` or `skipped`,
    report the part's `error` text: `skipped` usually means a chapter URL had
