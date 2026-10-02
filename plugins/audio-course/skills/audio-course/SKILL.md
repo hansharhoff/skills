@@ -58,6 +58,11 @@ analogy and repetition. Code goes in show notes.
    chapter heading and send each chapter as `script` with `"verbatim": true`,
    unchanged). **Stop and wait for an explicit yes.**
 2. Cap: 60 chapters.
+   Title each part with the book's own label, because the server announces
+   the title as given ("Shape Up: Chapter 1: Introduction.") and ends with
+   "End of <title>.": e.g. "Foreword by Jason Fried", "Chapter 1:
+   Introduction", "Chapter 2: Principles of Shaping". Never rely on the part
+   number for chapter numbering; front matter shifts it.
 3. Every `script` must be 200 to 60000 characters, or the server rejects the
    whole request. Merge a short piece (dedication, epigraph) into its
    neighbour or leave it out, and split an over-long chapter into "Chapter 7,
