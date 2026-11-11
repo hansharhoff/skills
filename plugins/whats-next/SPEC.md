@@ -7,7 +7,7 @@
 
 ## Problem
 
-Hans frequently context-switches between projects, sessions, and time-zones. When picking a session back up he needs a fast triage of "what's the highest-leverage thing to do RIGHT NOW", drawing from in-session tasks, open PRs, scheduled memory notes, Atlassian items, git state, and the small "let's circle back" / "remind me to" hints that accumulate in conversation.
+Hans frequently context-switches between projects, sessions, and time-zones. When picking a session back up he needs a fast triage of "what's the highest-leverage thing to do RIGHT NOW", drawing from in-session tasks, open PRs, scheduled memory notes, GitHub issues, git state, and the small "let's circle back" / "remind me to" hints that accumulate in conversation.
 
 Today he asks variants of "what's next?" by hand each time, and the answer relies on whichever signals happen to be top-of-context. Forgotten items stay forgotten; capture of new TODOs is ad-hoc.
 
@@ -15,7 +15,7 @@ Today he asks variants of "what's next?" by hand each time, and the answer relie
 
 A single skill that:
 
-1. **Reads** the current workspace's state across PRs, in-session tasks, scheduled memory notes, Atlassian (when MCP available), git, and circle-back items, and renders a ranked dashboard ≤ 80 % of one screen.
+1. **Reads** the current workspace's state across PRs, in-session tasks, scheduled memory notes, GitHub issues, git, and circle-back items, and renders a ranked dashboard ≤ 80 % of one screen.
 2. **Captures** new TODOs from natural-language phrases ("remind me to …", "let's circle back to …", "for later") into either an in-session task or a durable memory file, depending on dating.
 3. **Closes** every render with a concrete one-line question targeting the top item, so Hans can act with a one-word reply.
 4. Acts, over time, like a lightweight project manager Hans hands open loops to.
@@ -50,7 +50,7 @@ A single skill that:
 Two layers of logic:
 
 - **`bin/gather.py`** — Python, side-effect-free, no MCP access. Reads CLI-available sources (gh, git, memory files). Emits JSON on stdout. Always exits 0 (errors go in-band in an `errors[]` array).
-- **`skills/whats-next/SKILL.md`** — markdown procedure executed by the assistant. Calls gather.py, layers in session-only sources (TaskList, Atlassian MCP, recent conversation), merges all items, applies the ranking + 80 %-screen budget, renders the dashboard, asks the closing question.
+- **`skills/whats-next/SKILL.md`** — markdown procedure executed by the assistant. Calls gather.py, layers in session-only sources (TaskList, GitHub issues, recent conversation), merges all items, applies the ranking + 80 %-screen budget, renders the dashboard, asks the closing question.
 
 ## Activation
 
@@ -108,8 +108,7 @@ A single JSON object:
 | `pr` | GitHub PR number with `#` | `#106` |
 | `task` | `T` + ordinal | `T1` |
 | `memory_scheduled` | `M` + ordinal | `M1` |
-| `jira` | issue key verbatim | `DAS-6267` |
-| `confluence` | `C` + ordinal | `C1` |
+| `issue` | `<repo>#<n>` | `work#42` |
 | `git` | `G` + ordinal | `G1` |
 | `open_question` | `Q` + ordinal | `Q1` |
 | `handoff` | `H` + ordinal | `H1` |
@@ -132,18 +131,17 @@ IDs are **stable within a single render**, not globally. When Hans types `do #10
 ### SKILL.md (session-only, layered on top)
 
 4. **In-session tasks** — read via the TaskList tool inside the skill body. Maps to `kind: "task"`, refs `T1`, `T2`, …
-5. **Atlassian MCP** (when available) — the skill detects `mcp__claude_ai_Atlassian__*` tools and runs:
-   - `searchJiraIssuesUsingJql` with `assignee = currentUser() AND statusCategory != Done` → `kind: "jira"`.
-   - `searchJiraIssuesUsingJql` with `comment ~ currentUser() AND updated >= -14d` → mentions, lower score.
-   - `searchConfluenceUsingCql` with `task.assignee = currentUser() AND task.status = "incomplete"` → inline tasks, `kind: "confluence"`.
-   - `searchConfluenceUsingCql` with `mention = currentUser() AND lastModified >= -7d` → mentions, lower score.
+5. **GitHub issues** — the skill runs:
+   - `gh search issues --assignee @me --state open --owner Merchandising-Solutions` → `kind: "issue"`.
+   - `gh project item-list 1 --owner Merchandising-Solutions` → each issue's Status on project #1 "Appretio".
+   - `gh search issues --mentions @me --state open --owner Merchandising-Solutions --updated >=<14d ago>` → mentions, lower score.
 6. **Open questions / circle-back** — read durable memory files named `circle_back_*.md` (written by CAPTURE mode); also scan the last ~20 turns of conversation for trigger phrases not yet captured. `kind: "open_question"`, refs `Q1`, `Q2`, …
 7. **Previous-session handoff** — read `~/.claude/projects/<workspace-slug>/whats-next-handoff.md` (written by the previous run's step 8). Picks up *latent* state from prior sessions — small asides, decisions, in-flight work — that wasn't tracked elsewhere. `kind: "handoff"`, refs `H1`, `H2`, … Skipped if the file doesn't exist (e.g. first invocation in a workspace).
 
 ### Graceful degradation
 
 - gh unauthenticated → PRs collector returns empty + adds an `errors[]` entry.
-- MCP not connected → Atlassian collectors skipped silently (a single-line footer notes it).
+- Project #1 unreadable (no `read:project` scope) → issues listed without Status (a single-line footer notes it).
 - Memory dir missing → memory_scheduled returns empty.
 - Handoff file missing → first-invocation case, skipped silently (no error).
 
@@ -153,12 +151,12 @@ After every READ-mode render, the skill writes `~/.claude/projects/<workspace-sl
 
 The handoff captures **only the latent state** from the current session that won't be re-discoverable next session via the existing collectors above:
 
-- **Latent asides** — small things mentioned in passing that didn't become a PR / task / memory file / Jira ticket.
+- **Latent asides** — small things mentioned in passing that didn't become a PR / task / memory file / GitHub issue.
 - **Decisions made** — settled choices the user committed to (reference info, not action — surfaced only when the user asks).
 - **In-flight (not yet tracked)** — work that started but isn't in a tracked system.
 - **Open / awaited (who/what)** — blocked on someone else's response, with named person + what we're waiting on.
 
-The skill should **not** duplicate items already discoverable elsewhere (PRs, git, Jira, memory) — those are re-found via gather.py + the session-only sources on the next run.
+The skill should **not** duplicate items already discoverable elsewhere (PRs, git, GitHub issues, memory) — those are re-found via gather.py + the session-only sources on the next run.
 
 Rationale: when Hans `/clear`s a long session and starts fresh, the new session loses the conversational context entirely. PRs and tracked items survive because they're in external systems; the *latent context* would otherwise vanish. This file is the bridge.
 
@@ -176,8 +174,7 @@ score = urgency × recency_multiplier × dependency_multiplier
 | `pr` | 8 if green + unreviewed + blocks another open item; 7 if green + unreviewed; 6 if green + changes-requested (your action); 5 if green + draft (your flip); 4 if pending CI; 2 default open |
 | `task` | 7 `in_progress`; 4 `pending` unblocked; 0 `pending` blocked |
 | `memory_scheduled` | 9 overdue; 7 due today; 4 due this week; 2 future |
-| `jira` | priority Highest 7 / High 6 / Medium 4 / Low 2; +1 if due-date this week |
-| `confluence` | inline-task assigned 5; recent mention 2 |
+| `issue` | `urgent` 9; else `priority-highest` 7 / `-high` 6 / `-medium` 4 / `-low` 2 / none 3; +1 if project Status `In progress`; recent mention 2 |
 | `git` | uncommitted on PR branch 4; uncommitted otherwise 2; unpushed commits 3 |
 | `open_question` | captured ≤ 7 days ago: 3; older: 5 (forgotten penalty) |
 
@@ -221,9 +218,8 @@ Next: <action verb> <ref> — <one-line why>
   M1  Friction retro (today)                       project_friction_retro_2026_06_04
   M2  Revisit copy-skip question                   no date · keep on radar
 
-🎫 Atlassian (N items)         ← only if MCP available
-  DAS-6267  Pareto sweep …                          assignee=you · Medium · 3d
-  C1        Confluence: standup notes               inline task · 7d
+🎫 Issues (N assigned)
+  work#42   Pareto sweep …                          priority-medium · In progress · 3d
 
 🌿 Local (N items)             ← only if non-empty
   G1  uncommitted on feat/pareto-viewer-tab        3 files · likely WIP
@@ -257,8 +253,7 @@ Next: <action verb> <ref> — <one-line why>
 | PR draft, green | flip to ready | drop |
 | Task in_progress | continue | pause / drop |
 | Memory due-today | act now | reschedule / drop |
-| Jira high priority | look at the ticket | reassign / comment / drop |
-| Confluence inline task | open the page | drop |
+| Issue urgent / high priority | look at the issue | reassign / comment / drop |
 | Circle-back captured | revisit | reschedule / convert to task / drop |
 | Git uncommitted | commit or stash | drop |
 
@@ -326,4 +321,4 @@ No tests on SKILL.md (markdown-driven procedures are hard to unit-test); rely on
 1. **Cross-workspace mode** — Hans confirmed current-workspace-only for v1, but multi-workspace scan could be valuable for the morning catch-up. Revisit after a week of v1 usage.
 2. **"Open questions from conversation" collector** — punted in §3 of the design. Hard heuristic. Revisit if Hans finds himself manually adding `Q*` items often.
 3. **Bias against draft PRs** — currently scored 2-5. May want to drop them entirely from the default view, with `--all` to surface.
-4. **Action automation** — closing prompt currently lists verbs; the skill performs SOME (admin-merge) but not all (act-on-Jira). Define a clear automation surface in v2.
+4. **Action automation** — closing prompt currently lists verbs; the skill performs SOME (admin-merge) but not all (act-on-issue). Define a clear automation surface in v2.
