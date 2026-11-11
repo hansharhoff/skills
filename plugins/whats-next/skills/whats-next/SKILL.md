@@ -5,7 +5,7 @@ description: >
   mode when the user asks "what's next", "where were we", "what should I do",
   "what now", "status", or asks for a "triage" / "catch me up" — produces a
   ranked dashboard across open PRs, in-session tasks, scheduled memory notes,
-  Atlassian items (when MCP is available), git state, and previously captured
+  GitHub issues assigned to you, git state, and previously captured
   circle-back items. Use it in CAPTURE mode when the user says "remind me to
   …", "let's circle back to …", "we should X later", "for later", "don't
   forget to …", "note for next time", "TODO …", or "circle back on …" — the
@@ -61,18 +61,25 @@ each task:
   blocked → 0 (drop). Completed tasks are dropped from the dashboard.
 - Recency multiplier: based on the task's last update if available, else 1.0.
 
-**Atlassian** — if any `mcp__claude_ai_Atlassian__*` tool is callable in the
-session, run two searches and merge results:
-- `searchJiraIssuesUsingJql` with JQL `assignee = currentUser() AND statusCategory != Done`
-  → `kind: "jira"`, `ref` = issue key (e.g. `DAS-6267`). Urgency from priority
-  (Highest 7 / High 6 / Medium 4 / Low 2), `+1` if due-date is this week.
-- `searchConfluenceUsingCql` with CQL `task.assignee = currentUser() AND task.status = "incomplete"`
-  → `kind: "confluence"`, `ref: "C<n>"`. Urgency 5.
-- Both searches: comment / mention searches (`comment ~ currentUser() AND updated >= -14d`
-  and `mention = currentUser() AND lastModified >= -7d`) → urgency 2.
+**Issues** — open GitHub issues assigned to you across the org, joined with
+their Status on org project #1 "Appretio":
 
-If the Atlassian MCP isn't connected, add a one-line footer:
-`(Atlassian MCP not connected — Jira/Confluence skipped.)`
+```
+gh search issues --assignee @me --state open --owner Merchandising-Solutions \
+  --json repository,number,title,labels,updatedAt --limit 100
+gh project item-list 1 --owner Merchandising-Solutions --format json --limit 1000 \
+  --jq '.items[] | select(.content.type == "Issue") | {url: .content.url, status}'
+```
+
+- `kind: "issue"`, `ref` = `<repo>#<n>` (e.g. `work#42`).
+- Urgency from labels: `urgent` 9; else `priority-highest` 7 / `priority-high` 6 /
+  `priority-medium` 4 / `priority-low` 2 / none 3. `+1` if the project Status is
+  `In progress`; drop the item if it is `Done`.
+- Mentions: `gh search issues --mentions @me --state open --owner Merchandising-Solutions
+  --updated ">=<14 days ago>"` → urgency 2, unless already listed.
+
+If `gh` is unauthenticated or lacks the `read:project` scope, list what the search
+returned and add a one-line footer: `(project #1 unreadable — Status skipped.)`
 
 **Open questions / circle-back** — read durable memory files matching
 `circle_back_*.md` in `$HOME/.claude/projects/<workspace-slug>/memory/` (the
@@ -85,7 +92,7 @@ slug is the absolute workspace path with `/` → `-` and a leading dash).
 `$HOME/.claude/projects/<workspace-slug>/whats-next-handoff.md` if it exists.
 This is the file written by **step 8** of a previous READ-mode run; it
 carries forward the *latent* context (small asides, decisions, in-flight
-work) that hadn't graduated to PRs / tasks / Jira / memory before that
+work) that hadn't graduated to PRs / tasks / issues / memory before that
 prior session ended.
 
 - For each bullet under `## Latent asides` / `## In-flight (not yet tracked)`
@@ -124,7 +131,7 @@ Drop items with `score < 1.0`.
 
 Apply the 80%-of-screen budget:
 - ≤ 4 items per section.
-- Sections render in this order: Pull Requests, Tasks, Scheduled, Atlassian,
+- Sections render in this order: Pull Requests, Tasks, Scheduled, Issues,
   Local, Open questions, Carried over.
 - Empty sections are dropped silently.
 - If total items > what fits, append a trailing line:
@@ -152,9 +159,9 @@ Next: <action verb> <ref> — <one-line why>
   M1  Friction retro (today)                       project_friction_retro_2026_06_04
   M2  Revisit copy-skip question                   no date · keep on radar
 
-🎫 Atlassian (N items)
-  DAS-6267  Pareto sweep …                          assignee=you · Medium · 3d
-  C1        Confluence: standup notes               inline task · 7d
+🎫 Issues (N assigned)
+  work#42   Pareto sweep …                          priority-medium · In progress · 3d
+  appretio#2482  Consistent design …                urgent · Backlog · 1d
 
 🌿 Local (N items)
   G1  uncommitted on feat/pareto-viewer-tab        3 files · likely WIP
@@ -179,8 +186,7 @@ Pick the closing-question verb from the top item's state:
 | PR draft, green | flip to ready | drop |
 | Task in_progress | continue | pause / drop |
 | Memory due-today | act now | reschedule / drop |
-| Jira High/Highest | look at the ticket | reassign / comment / drop |
-| Confluence inline task | open the page | drop |
+| Issue urgent / priority-high+ | look at the issue | reassign / comment / drop |
 | Circle-back captured | revisit | reschedule / convert to task / drop |
 | Carried-over handoff item | pick up | promote to task / drop |
 | Git uncommitted | commit or stash | drop |
@@ -212,7 +218,7 @@ handoffs don't matter once a fresh one is written.
 
 The point is to capture *latent* state — the stuff that wouldn't otherwise
 survive into the next session. Things already tracked elsewhere (PRs in
-`gh`, issues in Jira, items in TaskList, files under `memory/`) are
+`gh`, issues on GitHub, items in TaskList, files under `memory/`) are
 re-discoverable next session via gather.py + the session-only sources, so
 they don't belong in the handoff.
 
@@ -236,7 +242,7 @@ load-bearing context for future work. Drop stale or superseded decisions.
 Scan THIS session's conversation for things to add. Four bucket types:
 
 - **Latent asides** — small things mentioned in passing that didn't get
-  promoted to a PR, task, memory file, or Jira item. Hans's specific concern:
+  promoted to a PR, task, memory file, or GitHub issue. Hans's specific concern:
   "the small tasks mentioned in passing". Example: *"and we should double-
   check the CA cert path on macOS later"*.
 - **Decisions made** — substantive choices the user committed to this session
@@ -252,7 +258,7 @@ Scan THIS session's conversation for things to add. Four bucket types:
 
 **Dedup against the dashboard you just rendered.** Before adding any bullet,
 check whether its substance is already represented in the dashboard's PRs /
-Tasks / Scheduled / Atlassian / Local / Open questions sections. If yes,
+Tasks / Scheduled / Issues / Local / Open questions sections. If yes,
 **drop it** — the next session will re-discover it via gather.py and the
 session-only sources, so duplicating it in the handoff would produce a
 duplicate dashboard item.
@@ -293,7 +299,7 @@ top_focus: <one-line summary of what this session was mostly about>
 - **If there's nothing worth carrying**, write just the frontmatter + one
   line `(nothing carried over — fresh slate)`.
 - **Don't duplicate** items that gather.py would re-discover (open PRs, git
-  state, Jira tickets, scheduled memory files). The handoff is for things
+  state, GitHub issues, scheduled memory files). The handoff is for things
   those sources *won't* surface.
 - **Keep each bullet to one line** — if it needs a paragraph, it probably
   belongs as a circle-back memory file (CAPTURE mode) or a task instead.
